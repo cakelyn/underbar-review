@@ -180,7 +180,10 @@
   _.reduce = function(collection, iterator, accumulator) {
 
     var temp;
-    accumulator = accumulator || collection[0];
+
+    if (arguments.length < 3) {
+      accumulator = collection[0];
+    }
 
     // test how many args were passed to reduce
     // if args.length less than 3
@@ -189,15 +192,15 @@
     if (arguments.length < 3) {
       _.each(collection.slice(1), function(value) {
         temp = iterator(accumulator, value);
-        if (temp === undefined) {
-          accumulator += temp;
+        if (temp !== undefined) {
+          accumulator = temp;
         }
       });
     } else {
       _.each(collection, function(value) {
         temp = iterator(accumulator, value);
-        if (temp === undefined) {
-          accumulator += temp;
+        if (temp !== undefined) {
+          accumulator = temp;
         }
       });
     }
@@ -220,13 +223,29 @@
 
   // Determine whether all of the elements match a truth test.
   _.every = function(collection, iterator) {
-    // TIP: Try re-using reduce() here.
+
+    iterator = iterator || _.identity;
+    //pass collection to reduce and use iterator
+    var result = _.reduce(collection, function(memo, item){
+      //call iterator on collection making sure every return is true
+      if (!iterator(item)) {
+        memo = false;
+      }
+      return memo;
+    }, true);
+
+    return result;
   };
 
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
     // TIP: There's a very clever way to re-use every() here.
+    iterator = iterator || _.identity;
+
+    return !_.every(collection, function(item){
+      return !iterator(item);
+    });
   };
 
 
@@ -249,11 +268,35 @@
   //     bla: "even more stuff"
   //   }); // obj1 now contains key1, key2, key3 and bla
   _.extend = function(obj) {
+
+    var args = Array.from(arguments);
+    args.shift();
+
+    _.each(args, function(pairs){
+      _.each(pairs, function(val, key) {
+        obj[key] = val;
+      });
+    });
+
+    return obj;
   };
 
   // Like extend, but doesn't ever overwrite a key that already
   // exists in obj
   _.defaults = function(obj) {
+
+    var args = Array.from(arguments);
+    args.shift();
+
+    _.each(args, function(pairs){
+      _.each(pairs, function(val, key) {
+        if (!obj.hasOwnProperty(key)) {
+          obj[key] = val;
+        }
+      });
+    });
+
+    return obj;
   };
 
 
@@ -297,6 +340,17 @@
   // already computed the result for the given argument and return that value
   // instead if possible.
   _.memoize = function(func) {
+    var obj = {};
+    console.log('outside ' + obj[func]);
+
+    return function() {
+      if ( obj[func] ) {
+        return obj[func];
+      } else {
+        obj[func] = func.apply(this, arguments);
+        console.log('inside ' + obj[func]);
+      }
+    };
   };
 
   // Delays a function for the given number of milliseconds, and then calls
